@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>五子棋</title>
+		<style>
+			/*坐标：包含垂直坐标、水平坐标及坐标元素*/
+			.div0{
+				width:900px;
+				height:900px;
+				position:absolute;
+				top:40px;
+				left:160px;
+				z-index:0;
+			}
+			/*垂直坐标*/
+			.VerticalOrdinate{
+				width:20px;
+				height:840px;
+				position:absolute;
+			}
+			/*水平坐标*/
+			.HorizontalOrdinate{
+				width:900px;
+				height:20px;
+				position:absolute;
+				top:880px;
+				left:35px;
+			}
+			/*坐标元素*/
+			.VerticalOrdinateElement{
+				height:60px;
+			}
+			.HorizontalOrdinateElement{
+				display:inline-block;
+				width:60px;
+			}
+			
+			/*棋盘：包含竖线和横线各15条*/
+			.div1{
+				width:900px;
+				height:860px;
+				position:absolute;
+				top:50px;
+				left:200px;
+				z-index:1;
+			}
+			/*竖线*/
+			.Vertical{
+				background:black;
+				width:1px;
+				height:841px;
+				position:absolute;
+			}
+			#Vertical1,#Vertical15{width:2px}
+			/*横线*/
+			.Horizontal{
+				background:black;
+				width:841px;
+				height:1px;
+				position:absolute;
+			}
+			#Horizontal1,#Horizontal15{height:2px}
+			
+			/*棋子位置：共15*15=225个*/
+			.div2{
+				width:900px;
+				height:900px;
+				position:absolute;
+				top:40px;
+				left:190px;
+				z-index:2;
+			}
+			.Button{
+				width:20px;
+				height:20px;
+				border-radius:50%;
+				position:absolute;
+				cursor:pointer;
+			}
+			#Button_D4,#Button_L4,#Button_H8,#Button_D12,#Button_L12{
+				background:black;
+			}
+		</style>
+	</head>
+	<body>
+		<div class='div0'>
+			<div class='VerticalOrdinate'></div>
+			<div class='HorizontalOrdinate'></div>
+		</div>
+		<div class='div1'></div>
+		<div class='div2'></div>
+		<script>
+			const LETTER=['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O'];
+			//生成元素逻辑：包含生成横纵坐标、生成横线和竖线，生成棋子位置
+			//生成横纵坐标
+			var verticalOrdinate=document.getElementsByClassName('VerticalOrdinate')[0];
+			var horizontalOrdinate=document.getElementsByClassName("HorizontalOrdinate")[0];
+			for(var i=0;i<=14;i++){
+				var verticalOrdinateElement=document.createElement("div");
+				verticalOrdinateElement.setAttribute("class","VerticalOrdinateElement");
+				verticalOrdinateElement.appendChild(document.createTextNode(15-i));
+				verticalOrdinate.appendChild(verticalOrdinateElement);
+				
+				var horizontalOrdinateElement=document.createElement("div");
+				horizontalOrdinateElement.setAttribute("class","HorizontalOrdinateElement");
+				horizontalOrdinateElement.appendChild(document.createTextNode(LETTER[i]));
+				horizontalOrdinate.appendChild(horizontalOrdinateElement);
+			}
+			//生成横线和竖线元素
+			var div1=document.getElementsByClassName('div1')[0];
+			for(var i=1;i<=15;i++){
+				var x=(i-1)*60;
+				var verticalLine=document.createElement('div');
+				verticalLine.setAttribute("class","Vertical");
+				verticalLine.setAttribute("id","Vertical"+i);
+				verticalLine.style.marginLeft=x+'px';
+				div1.appendChild(verticalLine);
+				
+				var horizontalLine=document.createElement('div');
+				horizontalLine.setAttribute("class","Horizontal");
+				horizontalLine.setAttribute("id","Horizontal"+i);
+				horizontalLine.style.marginTop=x+'px';
+				div1.appendChild(horizontalLine);
+			}
+			//生成棋子位置
+			var div2=document.getElementsByClassName("div2")[0];
+			//i代表横坐标，j代表纵坐标
+			for(var i=0;i<=14;i++){
+				for(var j=1;j<=15;j++){
+					var buttonLocation=document.createElement("div");
+					buttonLocation.setAttribute('class',"Button");
+					buttonLocation.setAttribute("id","Button_"+LETTER[i]+j);
+					buttonLocation.addEventListener("click",play,false);
+					
+					buttonLocation.style.marginLeft=60*i+"px";
+					buttonLocation.style.marginTop=60*(15-j)+"px";
+					div2.appendChild(buttonLocation);
+				}
+			}
+			//黑白棋子落子函数：包含黑白棋子落子和解决棋子平移问题
+			var number=0;
+			function play(){
+				if(number%2==0)
+				blackPlay(this);
+				else
+				whitePlay(this);
+				number++;
+				victory();
+			}
+			function blackPlay(x){
+				translation(x);
+				x.style.backgroundColor='black';
+				x.style.width='40px';
+				x.style.height='40px';
+				x.removeEventListener("click",play,false);
+			}
+			function whitePlay(x){
+				translation(x);
+				x.style.backgroundColor='pink';
+				x.style.width='40px';
+				x.style.height='40px';
+				x.removeEventListener("click",play,false);
+			}
+			//解决棋子平移问题
+			function translation(x){
+				x.style.marginLeft=((+x.style.marginLeft.replace("px",""))-10)+"px";
+				x.style.marginTop=((+x.style.marginTop.replace("px",""))-10)+"px";
+				/*代码简写
+				var strLeft=x.style.marginLeft;
+				strLeft=strLeft.replace("px","");
+				x.style.marginLeft=((+strLeft)-10)+"px";
+				var strTop=x.style.marginTop;
+				strTop=strTop.replace("px","");
+				x.style.marginTop=((+strTop)-10)+"px";
+				*/
+			}
+			//判断输赢逻辑，包括读取所有棋子状态，将状态转化为二维数组，判断输赢
+			//将落子情况读取为二维数组，piece存储所有棋子位置
+			function victory(){
+				var piece=new Array();
+				for(var i=0;i<15;i++){
+					piece[i]=new Array();
+				}
+				var k=0;
+				for(var i=0;i<15;i++){
+					for(var j=0;j<15;j++){
+							piece[i][j]=document.getElementsByClassName("Button")[k++];
+						}
+				}
+				//将棋子位置转化为描述棋子状态的二维数组，0代表空，1代表黑子，2代表白子，用color存储
+				var color=new Array();
+				for(var i=0;i<15;i++){
+					color[i]=new Array();
+				}
+				for(var i=0;i<15;i++){
+					for(var j=0;j<15;j++){
+						if(piece[i][j].style.backgroundColor=="black" && piece[i][j].style.width=="40px")
+						color[i][j]=1;
+						else if(piece[i][j].style.backgroundColor=="pink" && piece[i][j].style.width=="40px")
+						color[i][j]=2;
+						else
+						color[i][j]=0;
+					}
+				}
+				//判断黑棋还是白棋赢
+				var result=victoryEstimate(color);
+				if(typeof(result)=='undefined'){}
+				else if(result){
+					alert("黑棋赢");
+					removeAllEventListener();
+				}
+				else{
+					alert("白棋赢");
+					removeAllEventListener();
+				}
+			}
+			
+			function victoryEstimate(color){
+				//垂直判断
+				for(var i=0;i<15;i++){
+					for(var j=0;j<11;j++){
+						if(color[i][j]==1 && color[i][j+1]==1 && color[i][j+2]==1 && color[i][j+3]==1 && color[i][j+4]==1)
+						return true;
+						if(color[i][j]==2 && color[i][j+1]==2 && color[i][j+2]==2 && color[i][j+3]==2 && color[i][j+4]==2)
+						return false;
+					}
+				}
+				//水平判断
+				for(var j=0;j<15;j++){
+					for(var i=0;i<11;i++){
+						if(color[i][j]==1 && color[i+1][j]==1 && color[i+2][j]==1 && color[i+3][j]==1 && color[i+4][j]==1)
+						return true;
+						if(color[i][j]==2 && color[i+1][j]==2 && color[i+2][j]==2 && color[i+3][j]==2 && color[i+4][j]==2)
+						return false;
+					}
+				}
+				//左斜判断
+				for(var i=0;i<11;i++){
+					for(var j=0;j<11;j++){
+						if(color[i][j]==1 && color[i+1][j+1]==1 && color[i+2][j+2]==1 && color[i+3][j+3]==1 && color[i+4][j+4]==1)
+						return true;
+						if(color[i][j]==2 && color[i+1][j+1]==2 && color[i+2][j+2]==2 && color[i+3][j+3]==2 && color[i+4][j+4]==2)
+						return false;
+					}
+				}
+				//右斜判断
+				for(var i=4;i<15;i++){
+					for(var j=0;j<11;j++){
+						if(color[i][j]==1 && color[i-1][j+1]==1 && color[i-2][j+2]==1 && color[i-3][j+3]==1 && color[i-4][j+4]==1)
+						return true;
+						if(color[i][j]==2 && color[i-1][j+1]==2 && color[i-2][j+2]==2 && color[i-3][j+3]==2 && color[i-4][j+4]==2)
+						return false;
+					}
+				}
+			}
+			
+			//游戏结束。移除所有事件监听器
+			function removeAllEventListener(){
+				var piece=document.getElementsByClassName("Button");
+				for(var i=0;i<piece.length;i++)
+				piece[i].removeEventListener("click",play,false);
+			}
+			
+			
+		</script>
+	</body>
+</html>
